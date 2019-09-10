@@ -10,6 +10,7 @@
 
 using namespace std;
 
+
 class Rotator {
 public:
 	Rotator(const wstring& filename, const wstring& postfix, const wstring& workDir, const config& cfg) :
@@ -66,12 +67,12 @@ private:
 			return;
 		}
 
-		try {
-			rename(fileToRotate, targetFile);
-		}
-		catch (const exception& ex) {
+		error_code ec;
+		rename(fileToRotate, targetFile, ec);
+		if (ec)
+		{
 			wcout << L"Unable to rename " << fileToRotate << L" to " << targetFile << endl;
-			wcout << ex.what();
+			cout << "ec: " << ec.message() << " (" << ec.value() << ")" << endl;
 			exit(1);
 		}
 	}

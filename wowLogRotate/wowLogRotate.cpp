@@ -1,15 +1,20 @@
 ﻿#include <iostream>
 #include <string>
+#include <clocale>
 
 #include "RegOps.h"
 #include "LogRotate.h"
 #include "Defines.h"
 #include "ParseArgs.h"
 
+
 using namespace std;
 
 int main(int argc, char** argv)
 {
+	// Set locale
+	setlocale(LC_ALL, "English_United States.1251");
+
 	// Parse arguments
 	int opts = parseArgs(argc, argv);
 
