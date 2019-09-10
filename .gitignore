@@ -373,3 +373,4 @@ healthchecksdb
 *.out
 *.app
 >>>>>>> 4023f6ee38e45cdfd960bf056f526680bad01adc
+/wowLogRotate/wowLogRotate.cfg

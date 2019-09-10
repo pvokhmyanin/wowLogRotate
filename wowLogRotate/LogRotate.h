@@ -5,23 +5,17 @@
 #include <ctime>
 #include <set>
 #include <sstream>
-#include <map>
+
+#include "LogRotateConfig.h"
 
 using namespace std;
-namespace fs = std::filesystem;
-
-typedef map<string, int> config;
 
 class Rotator {
 public:
-	Rotator(const wstring& filename, const wstring& postfix, const wstring& workDir) :
-			m_filename(filename), m_postfix(postfix)
+	Rotator(const wstring& filename, const wstring& postfix, const wstring& workDir, const config& cfg) :
+			m_filename(filename), m_postfix(postfix), m_cfg(cfg)
 	{
 		m_workDir = fs::path(workDir);
-		m_cfg =	{
-			{"maxsizemb", 100},
-			{"keepfiles", 15}
-		};
 	}
 
 	void doRotate() {
@@ -36,8 +30,10 @@ private:
 	config m_cfg;
 
 	// Cook new name for the rotated file
+	// We always want to save yesterday's log with yesterday's date,
+	// hence we are going to extract 1 day from the current date
 	const wstring generateRotatedName() {
-		time_t currentTime = time(0);
+		time_t currentTime = time(0) - (24 * 60 * 60);
 		tm now;
 		localtime_s(&now, &currentTime);
 		wstringstream ret;
@@ -55,21 +51,18 @@ private:
 		fs::path fileToRotate = m_workDir / fs::path(m_filename + m_postfix);
 		if (!exists(fileToRotate))
 		{
-			cout << "File " << fileToRotate << " does not exist" << endl;
 			return;
 		}
 
 		// Check if file is 0-sized, we wont rotate empty files
 		fs::directory_entry srcFile(fileToRotate);
 		if (srcFile.file_size() == 0) {
-			cout << "File " << fileToRotate << " is 0 sized" << endl;
 			return;
 		}
 
 		// Check if target file already exists
 		fs::path targetFile = m_workDir / fs::path(generateRotatedName());
 		if (exists(targetFile)) {
-			cout << "File " << targetFile << " already exists" << endl;
 			return;
 		}
 
@@ -113,20 +106,23 @@ private:
 
 		set<fs::path>::reverse_iterator rIter;
 		uintmax_t heapSize = 0;
-		int fileCount = 0;
+		unsigned int fileCount = 0;
 		bool startRemoving = false;
 
-		cout << "Keep " << m_cfg["keepfiles"] << " files or " << m_cfg["maxsizemb"] << " Mb" << endl;
+		cout << "Keep " << m_cfg.keepMaxFiles << " files or " << m_cfg.keepMaxMb << " Mb" << endl;
 		for (rIter = fileHeap.rbegin(); rIter != fileHeap.rend(); rIter++) {
 			// First iterate over files we're going to keep,
 			// iterating over reverse set should give us newest files first.
+			fs::directory_entry de(*rIter);
+			heapSize += de.file_size();
+			fileCount++;
+
+			
 			if (!startRemoving) {
-				fs::directory_entry de(*rIter);
-				heapSize += de.file_size();
-				fileCount++;
-				if (fileCount > m_cfg["keepfiles"] or
-					(heapSize >> 20) > (m_cfg["maxsizemb"] )) {
+				if (fileCount > m_cfg.keepMaxFiles or
+					(heapSize >> 20) > (m_cfg.keepMaxMb )) {
 					startRemoving = true;
+					cout << "Limit exceeded, any remaining files are going to be removed." << endl;
 				}
 				else {
 					cout << "[" << setw(3) << fileCount << " : " << setw(4) << (heapSize >> 20) 
@@ -144,11 +140,9 @@ private:
 		}
 		if (!startRemoving) {
 			cout << "Nothing to rotate, we're fine! "
-				<< "(" << fileCount << "/" << m_cfg["keepfiles"] << ") files; "
-				<< "(" << (heapSize >> 20) << "/" << m_cfg["maxsizemb"] << ") Mb"
+				<< "(" << fileCount << "/" << m_cfg.keepMaxFiles << ") files; "
+				<< "(" << (heapSize >> 20) << "/" << m_cfg.keepMaxMb << ") Mb"
 				<< endl;
 		}
 	}
 };
-
-
