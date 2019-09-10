@@ -42,7 +42,7 @@ int getRegistryKey(HKEY &hKey, const LPCWSTR& qvalue) {
 	return 0;
 }
 
-int getStringValue(const HKEY& hKey, const LPCWSTR& qvalue, string& retValue) {
+int getStringValue(const HKEY& hKey, const LPCWSTR& qvalue, wstring& retValue) {
 
 	DWORD dwRet;
 	const DWORD SIZE = 1024;
@@ -71,25 +71,24 @@ int getStringValue(const HKEY& hKey, const LPCWSTR& qvalue, string& retValue) {
 	}
 	
 	// Convert WCHAR to string via intermittent wstring
-	wstring wst(szValue);
-	retValue = string(wst.begin(), wst.end());
+	retValue = wstring(szValue);
 	return 0;
 }
 
-string getWowLocation() {
+wstring getWowLocation() {
 	HKEY hKey;
-	string ret;
+	wstring ret;
 	const LPCWSTR qkey = getWowRegistryPath();
 	const LPCWSTR qvalue = L"InstallPath";
 	
 	// Retrieve Registry Key handle
 	if (getRegistryKey(hKey, qkey)) {
-		return "";
+		return L"";
 	}
 
 	// Read InstallPath value from the Registry Key
 	if (getStringValue(hKey, qvalue, ret)) {
-		ret = "";
+		ret = L"";
 	}
 
 	RegCloseKey(hKey);

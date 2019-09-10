@@ -23,5 +23,8 @@
     <ClInclude Include="RegOps.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="LogRotate.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
