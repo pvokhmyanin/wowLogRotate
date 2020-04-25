@@ -33,17 +33,21 @@ private:
 	// Cook new name for the rotated file
 	// We always want to save yesterday's log with yesterday's date,
 	// hence we are going to extract 1 day from the current date
-	const wstring generateRotatedName() {
+	const wstring generateRotatedName(bool shortName) {
 		time_t currentTime = time(0) - (24 * 60 * 60);
 		tm now;
 		localtime_s(&now, &currentTime);
 		wstringstream ret;
 		ret << setprecision(4) << setfill(L'0');
-		ret << m_filename << L'-' << setw(4) << now.tm_year + 1900
-			<< L'_' << setw(2) << now.tm_mon + 1
-			<< L'_' << setw(2) << now.tm_mday
-			<< m_postfix;
-
+		// Sample filename:
+		// WoWCombatLog-split-2020-03-02T18-03-39.983Z.txt
+		ret << m_filename << L"-split-" << setw(4) << now.tm_year + 1900
+			<< L'-' << setw(2) << now.tm_mon + 1 << L'-' << setw(2) << now.tm_mday << L'T';
+		// We use shortname to see if today's log already exists regardless of HH:MM:SS
+		if (!shortName)
+			ret << setw(2) << now.tm_hour << L'-' << setw(2) << now.tm_min << L'-' << setw(2) << now.tm_sec
+			<< L".000Z" << m_postfix;
+		
 		return ret.str();
 	}
 	// Rename current file
@@ -62,12 +66,29 @@ private:
 		}
 
 		// Check if target file already exists
-		fs::path targetFile = m_workDir / fs::path(generateRotatedName());
-		if (exists(targetFile)) {
-			return;
+		fs::path targetFile = m_workDir / fs::path(generateRotatedName(true));
+		try {
+			fs::directory_iterator dir(m_workDir);
+			for (const auto& e : dir) {
+				fs::path p = e.path();
+				wstring fn = p.filename();
+				if (fn.rfind(targetFile, 0))
+					return;
+			}
+		}
+		catch (const fs::filesystem_error& fse) {
+			cout << "Directory " << m_workDir << " does not exist" << endl;
+			cout << fse.what() << endl;
+			exit(1);
+		}
+		catch (const exception& exc) {
+			cout << "Uncaught exception!" << endl;
+			cout << exc.what() << endl;
+			exit(2);
 		}
 
 		error_code ec;
+		targetFile = m_workDir / fs::path(generateRotatedName(false));
 		rename(fileToRotate, targetFile, ec);
 		if (ec)
 		{
