@@ -27,7 +27,9 @@ int main(int argc, char** argv)
 	wcout << L"WoW location: " << wowInstallPath << endl;
 
 	// Read config file
-	config cfg = readConfig(L"wowLogRotate.cfg", opts);
+	wstring configPath = getConfigPath();
+	wcout << L"Using config file " << configPath << endl;
+	config cfg = readConfig(configPath, opts);
 
 	// Perform log rotation
 	Rotator r(L"WoWCombatLog", L".txt", wowInstallPath + L"\\Logs", cfg);

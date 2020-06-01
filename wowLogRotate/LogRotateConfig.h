@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <filesystem>
+#include <windows.h>
 
 #include "Defines.h"
 
@@ -15,6 +16,14 @@ struct config {
 	unsigned int keepMaxFiles = 14;	// Default amount of files to keep
 									// is 2 weeks worth of logs
 };
+
+wstring getConfigPath() {
+	WCHAR ownPth[MAX_PATH];
+	GetModuleFileNameW(NULL, ownPth, MAX_PATH);
+	wstring ret(ownPth);
+	int pos = ret.rfind('\\');
+	return ret.substr(0, pos + 1) + L"wowLogRotate.cfg";
+}
 
 ostream& operator<<(ostream& os, const config& cfg) {
 	os << "KeepMaxMb " << cfg.keepMaxMb << endl;
