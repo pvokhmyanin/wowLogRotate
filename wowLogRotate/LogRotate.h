@@ -56,24 +56,29 @@ private:
 		fs::path fileToRotate = m_workDir / fs::path(m_filename + m_postfix);
 		if (!exists(fileToRotate))
 		{
+			wcout << L"File " << m_filename << m_postfix << L" to rotate does not exist" << endl;
 			return;
 		}
 
 		// Check if file is 0-sized, we wont rotate empty files
 		fs::directory_entry srcFile(fileToRotate);
 		if (srcFile.file_size() == 0) {
+			wcout << L"File " << m_filename << m_postfix << L" is 0 sized" << endl;
 			return;
 		}
 
 		// Check if target file already exists
-		fs::path targetFile = m_workDir / fs::path(generateRotatedName(true));
+		wstring tgtfilews = generateRotatedName(true);
+		fs::path targetFile = m_workDir / fs::path(tgtfilews);
 		try {
 			fs::directory_iterator dir(m_workDir);
 			for (const auto& e : dir) {
 				fs::path p = e.path();
 				wstring fn = p.filename();
-				if (fn.rfind(targetFile, 0))
+				if (fn.rfind(targetFile, 0) != wstring::npos) {
+					wcout << L"Target file  " << tgtfilews << L" already exists" << endl;
 					return;
+				}
 			}
 		}
 		catch (const fs::filesystem_error& fse) {
